@@ -1,127 +1,236 @@
-# claude-plugin-template
+# marksman-lsp
 
-A ready-to-fork template for building a **Claude Code “plugin”** using:
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://claude.ai/code)
+[![LSP](https://img.shields.io/badge/LSP-Marksman-blue)](https://github.com/artempyanykh/marksman)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org)
 
-- **Claude Code project assets**: `.claude/commands`, `.claude/hooks`, `.claude/settings.json`
-- **MCP server** (Model Context Protocol) in **TypeScript** using stdio transport
-- **Team automation** in `.github/` (CI, templates, Copilot prompts/instructions)
+A Claude Code plugin providing **Markdown language server support** via [Marksman](https://github.com/artempyanykh/marksman), plus validation hooks for code blocks, links, frontmatter, and Claude Code syntax.
 
-## Quickstart
+## Features
+
+### LSP Operations
+
+| Operation | Description |
+|-----------|-------------|
+| `documentSymbol` | Navigate all headings with proper nesting |
+| `goToDefinition` | Jump from `[link](#heading)` to the heading |
+| `findReferences` | Find all links pointing to a heading |
+| `hover` | Preview section content |
+| `workspaceSymbol` | Search headings across all markdown files |
+
+### Validation Hooks
+
+| Hook | Trigger | Validates |
+|------|---------|-----------|
+| `validate-code-blocks` | onSave | Code blocks have language identifiers |
+| `validate-links` | onSave | Internal anchors and file links exist |
+| `validate-frontmatter` | onSave | YAML frontmatter structure |
+| `validate-claude-code` | onSave | LSP operations, slash commands |
+
+## Dependencies
+
+- **[Marksman](https://github.com/artempyanykh/marksman)** - Markdown language server
+- **Node.js 18+** - For validation hooks
+- **Claude Code** - With `ENABLE_LSP_TOOL=1`
+
+## Installation
+
+### 1. Install Marksman
 
 ```bash
-npm install
-npm run typecheck
-npm run build
-```
+# macOS
+brew install marksman
 
-Run the MCP server locally:
+# Linux (x86_64)
+curl -L https://github.com/artempyanykh/marksman/releases/latest/download/marksman-linux-x64 -o marksman
+chmod +x marksman && sudo mv marksman /usr/local/bin/
 
-```bash
-npm run dev
+# Windows
+scoop install marksman
 # or
-npm run start
+winget install artempyanykh.marksman
 ```
 
-## Fork checklist (rename it once)
+Verify installation:
+```bash
+marksman --version
+```
 
-- Rename the package in `package.json` and the server name/version in `src/index.ts`.
-- Update the `.mcp.json` server key (`mcpServers.<name>`) to match.
+### 2. Install the Plugin
 
-## Using with Claude Code (recommended)
+**Option A: From release tarball**
+```bash
+tar -xzf marksman-lsp.tar.gz
+/plugin install ./marksman-lsp --scope user
+```
 
-1) Build the server:
+**Option B: From repository**
+```bash
+git clone https://github.com/zircote/markdown-lsp.git
+/plugin install ./markdown-lsp --scope user
+```
+
+**Option C: Local development (plugin-dir mode)**
+```bash
+cd /path/to/markdown-lsp
+# Claude Code auto-detects .claude-plugin/plugin.json
+```
+
+### 3. Enable LSP Tool
 
 ```bash
-npm run build
+export ENABLE_LSP_TOOL=1
 ```
 
-2) Ensure `.mcp.json` exists at repo root (it does in this template):
+Or add to your shell profile (`~/.zshrc`, `~/.bashrc`):
+```bash
+echo 'export ENABLE_LSP_TOOL=1' >> ~/.zshrc
+```
+
+## Usage
+
+### LSP Operations
+
+Use the LSP tool in Claude Code on any `.md` file:
+
+```bash
+# Get document outline
+LSP documentSymbol README.md line=1 char=1
+
+# Jump to heading from link
+LSP goToDefinition README.md line=15 char=10
+
+# Find all references to a heading
+LSP findReferences README.md line=20 char=4
+
+# Preview section content
+LSP hover README.md line=15 char=10
+
+# Search across workspace
+LSP workspaceSymbol README.md line=1 char=1
+```
+
+### Validation Hooks
+
+Hooks run automatically on save. Diagnostics appear in Claude Code's system reminders.
+
+Example output:
+```
+lsp-test.md:
+  [Line 186:1] Code block missing language identifier (warning)
+  [Line 198:26] Broken anchor link: #does-not-exist (warning)
+```
+
+## Project Structure
+
+```
+marksman-lsp/
+├── .claude-plugin/
+│   └── plugin.json      # Plugin metadata
+├── .lsp.json            # LSP server configuration
+├── hooks/
+│   ├── hooks.json       # Hook definitions
+│   ├── validate-code-blocks.js
+│   ├── validate-links.js
+│   ├── validate-frontmatter.js
+│   └── validate-claude-code.js
+├── tests/
+│   └── lsp-test.md      # Test file for all features
+├── src/
+│   └── index.ts         # MCP server (optional)
+├── CLAUDE.md            # Project context for Claude
+└── README.md
+```
+
+## Configuration
+
+### LSP Configuration (`.lsp.json`)
 
 ```json
 {
-  "mcpServers": {
-    "claude-plugin-template": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["dist/index.js"],
-      "env": {}
-    }
+  "markdown": {
+    "command": "marksman",
+    "args": ["server"],
+    "extensionToLanguage": {
+      ".md": "markdown"
+    },
+    "transport": "stdio"
   }
 }
 ```
 
-3) Add/enable the MCP server in Claude Code.
+### Hook Configuration (`hooks/hooks.json`)
 
-If you use the CLI, the flow is typically:
-
-```bash
-claude mcp add claude-plugin-template -- node dist/index.js
-claude mcp list
+```json
+{
+  "markdownDiagnostics": [
+    {
+      "name": "validateCodeBlocks",
+      "trigger": "onSave",
+      "filePattern": "**/*.md",
+      "command": "$CLAUDE_PROJECT_DIR/hooks/validate-code-blocks.js"
+    }
+  ]
+}
 ```
 
-Docs: https://code.claude.com/docs/en/mcp
+## Development
 
-## Using with Claude Desktop
-
-Claude Desktop MCP servers are typically configured in `claude_desktop_config.json`.
-Common location (macOS): `~/Library/Application Support/Claude/claude_desktop_config.json`.
-Docs: https://modelcontextprotocol.io/docs/develop/connect-local-servers
-
-## What’s included
-
-### 1) MCP server (`src/index.ts`)
-
-This template exposes:
-- Tool: `hello({ name })` → returns “Hello, <name>!”
-- Resource: `template://readme`
-
-Add more tools/resources in `src/index.ts`.
-
-### 2) Claude Code commands (`.claude/commands/*`)
-
-Examples included:
-- `/setup` – install + build sanity check
-- `/mcp [dev|build|start]` – run the MCP server
-- `/github:pr-review <owner/repo#PR>` – review a PR with `gh`
-
-Reminder: nested folders create namespaces, e.g. `.claude/commands/github/pr-review.md` ⇒ `/github:pr-review`.
-Docs: https://code.claude.com/docs/en/slash-commands
-
-### 3) Claude Code hooks (`.claude/settings.json` + `.claude/hooks/*`)
-
-This template includes a minimal **PreToolUse** Bash guard hook that blocks obviously-dangerous shell commands.
-Docs: https://code.claude.com/docs/en/hooks
-
-### 4) “Skills” (`skills/*`)
-
-Put durable team guidance here: conventions, how-to, runbooks.
-
-### 5) GitHub automation (`.github/*`)
-
-- CI (`.github/workflows/ci.yml`) runs `npm ci`, `typecheck`, `build`.
-- Issue templates + PR template.
-- Copilot instructions and reusable prompts.
-
-## Developing new features
-
-### Add a new MCP tool
-
-1) Add `server.tool(...)` in `src/index.ts`.
-2) Run:
+### Testing Hooks Locally
 
 ```bash
-npm run typecheck
-npm run build
+# Test individual hooks
+node hooks/validate-code-blocks.js tests/lsp-test.md
+node hooks/validate-links.js tests/lsp-test.md
+node hooks/validate-frontmatter.js tests/lsp-test.md
+node hooks/validate-claude-code.js tests/lsp-test.md
 ```
 
-### Add a new slash command
+### Adding New Hooks
 
-Create: `.claude/commands/<name>.md`
+1. Create a new `.js` file in `hooks/`
+2. Output JSON: `{ "diagnostics": [...] }`
+3. Register in `hooks/hooks.json`
 
-Use YAML frontmatter to set `description` and restrict tools via `allowed-tools`.
+Diagnostic format:
+```json
+{
+  "line": 10,
+  "column": 1,
+  "severity": "warning",
+  "message": "Description of issue",
+  "source": "hook-name"
+}
+```
 
-## Security checklist
+## Troubleshooting
 
-- Never commit tokens or API keys.
-- Prefer `env` entries in `.mcp.json` and local overrides in `.claude/settings.local.json`.
-- Keep hooks fail-open unless you’re confident about payload compatibility.
+### LSP Not Working
+
+1. **Check marksman is installed**: `which marksman`
+2. **Verify LSP enabled**: `echo $ENABLE_LSP_TOOL` (should be `1`)
+3. **Restart Claude Code** after installing plugin
+4. **Check `.lsp.json` location**: Must be in project root for plugin-dir mode
+
+### Hooks Not Running
+
+1. **Check hooks are executable**: `ls -la hooks/*.js`
+2. **Verify Node.js available**: `which node`
+3. **Test hook manually**: `node hooks/validate-links.js README.md`
+
+## Security
+
+- Never commit tokens or API keys
+- Hooks run with user permissions
+- All hook output is JSON (no shell injection)
+
+## License
+
+MIT
+
+## Links
+
+- [Marksman GitHub](https://github.com/artempyanykh/marksman)
+- [Claude Code Docs](https://claude.ai/code/docs)
+- [LSP Specification](https://microsoft.github.io/language-server-protocol/)
