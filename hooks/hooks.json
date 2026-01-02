@@ -1,32 +1,32 @@
 {
-  "markdownDiagnostics": [
-    {
-      "name": "validateCodeBlocks",
-      "description": "Validates markdown code blocks for syntax and language identifiers",
-      "trigger": "onSave",
-      "filePattern": "**/*.md",
-      "command": "$CLAUDE_PROJECT_DIR/hooks/validate-code-blocks.js"
-    },
-    {
-      "name": "validateLinks",
-      "description": "Validates markdown links for broken references and proper formatting",
-      "trigger": "onSave",
-      "filePattern": "**/*.md",
-      "command": "$CLAUDE_PROJECT_DIR/hooks/validate-links.js"
-    },
-    {
-      "name": "validateFrontmatter",
-      "description": "Validates YAML frontmatter in markdown files",
-      "trigger": "onSave",
-      "filePattern": "**/*.md",
-      "command": "$CLAUDE_PROJECT_DIR/hooks/validate-frontmatter.js"
-    },
-    {
-      "name": "validateClaudeCodeSyntax",
-      "description": "Validates Claude Code specific markdown syntax and command references",
-      "trigger": "onSave",
-      "filePattern": "**/*.md",
-      "command": "$CLAUDE_PROJECT_DIR/hooks/validate-claude-code.js"
-    }
-  ]
+  "description": "Markdown LSP Plugin Hooks - Validates markdown files on write operations",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-code-blocks.js",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-links.js",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-frontmatter.js",
+            "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/validate-claude-code.js",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
+  }
 }
