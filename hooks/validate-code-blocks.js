@@ -2,14 +2,44 @@
 /**
  * Validates markdown code blocks for syntax and language identifiers.
  * Outputs diagnostics for code blocks missing language specifiers.
+ *
+ * Claude Code PostToolUse hook - receives tool input via stdin.
  */
 
 const fs = require('fs');
 
-const filePath = process.argv[2];
+// Read stdin for Claude Code hook input
+let stdinData = '';
+try {
+  stdinData = fs.readFileSync(0, 'utf8');
+} catch (e) {
+  // No stdin available
+}
+
+let filePath;
+if (stdinData) {
+  try {
+    const input = JSON.parse(stdinData);
+    filePath = input.tool_input?.file_path;
+  } catch (e) {
+    // Invalid JSON, try command line
+  }
+}
+
+// Fallback to command line argument
+if (!filePath) {
+  filePath = process.argv[2];
+}
+
 if (!filePath) {
   console.error('Usage: validate-code-blocks.js <file>');
   process.exit(1);
+}
+
+// Only validate markdown files
+if (!filePath.endsWith('.md')) {
+  console.log(JSON.stringify({ diagnostics: [] }));
+  process.exit(0);
 }
 
 const content = fs.readFileSync(filePath, 'utf8');
