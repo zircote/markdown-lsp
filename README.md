@@ -1,9 +1,11 @@
-# marksman-lsp
+# markdown-lsp
 
-[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-blueviolet)](https://claude.ai/code)
-[![LSP](https://img.shields.io/badge/LSP-Marksman-blue)](https://github.com/artempyanykh/marksman)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-18%2B-339933?logo=node.js)](https://nodejs.org)
+[![Version](https://img.shields.io/badge/version-0.1.2-blue.svg)](CHANGELOG.md)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Claude Plugin](https://img.shields.io/badge/claude-plugin-orange.svg)](https://docs.anthropic.com/en/docs/claude-code/plugins)
+[![Marketplace](https://img.shields.io/badge/marketplace-zircote--lsp-purple.svg)](https://github.com/zircote/lsp-marketplace)
+[![Markdown](https://img.shields.io/badge/Markdown-000000?logo=markdown&logoColor=white)](https://daringfireball.net/projects/markdown/)
+[![CI](https://github.com/zircote/markdown-lsp/actions/workflows/ci.yml/badge.svg)](https://github.com/zircote/markdown-lsp/actions/workflows/ci.yml)
 
 A Claude Code plugin providing **Markdown language server support** via [Marksman](https://github.com/artempyanykh/marksman), plus validation hooks for code blocks, links, frontmatter, and Claude Code syntax.
 
