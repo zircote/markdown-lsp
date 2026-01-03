@@ -1,3 +1,4 @@
+<!-- Hook test -->
 ---
 title: LSP Test Document
 author: Test Author
